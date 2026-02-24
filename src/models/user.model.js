@@ -77,23 +77,13 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// ✅ FIXED: Hash password before saving with proper error handling
-userSchema.pre("save", async function(next) {
-    try {
-        // Agar password modify nahi hua to next call karo
-        if (!this.isModified("password")) {
-            return next();
-        }
-        
-        // Password hash karo
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        this.passwordChangedAt = new Date();
-        
-        next();
-    } catch (error) {
-        next(error);
-    }
+// ✅ Async hook WITHOUT next — Mongoose handles errors automatically
+userSchema.pre("save", async function() {
+    if (!this.isModified("password")) return;
+
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    this.passwordChangedAt = new Date();
 });
 
 // Compare password method
